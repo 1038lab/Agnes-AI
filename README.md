@@ -308,7 +308,6 @@ Agnes-AI/
 ├── references/       # API reference + error codes
 ├── examples/         # Playground web UI + server
 ├── tests/            # Smoke tests (no framework needed)
-├── docs/             # Planning and task tracking
 └── agents/           # Agent configuration files
 ```
 
