@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agnes CLI Playground</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1b23;
+    --border: #2a2b35;
+    --text: #e4e4e7;
+    --text-dim: #888;
+    --accent: #6c5ce7;
+    --accent-hover: #7c6cf7;
+    --green: #2ecc71;
+    --red: #e74c3c;
+    --radius: 8px;
+    --font: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 24px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle { color: var(--text-dim); font-size: 13px; margin-bottom: 24px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+  label { display: block; font-size: 13px; margin-bottom: 4px; color: var(--text-dim); }
+  input, textarea, select {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: var(--font);
+    outline: none;
+    transition: border .2s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; font-family: var(--font); }
+  select { cursor: pointer; }
+  .row { display: flex; gap: 12px; }
+  .row > * { flex: 1; }
+  .mode-tabs {
+    display: flex; gap: 4px; margin-bottom: 16px;
+  }
+  .mode-tab {
+    flex: 1; padding: 10px; text-align: center; cursor: pointer;
+    border: 1px solid var(--border); border-radius: 6px;
+    font-size: 14px; font-weight: 600; transition: all .2s;
+    background: var(--bg); color: var(--text-dim);
+  }
+  .mode-tab:hover { border-color: var(--accent); color: var(--text); }
+  .mode-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn {
+    padding: 10px 24px; border: none; border-radius: 6px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all .2s; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+  .cmd-preview {
+    background: #000; border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px 16px; font-family: var(--font); font-size: 13px;
+    color: var(--green); overflow-x: auto; white-space: pre-wrap;
+    word-break: break-all; min-height: 20px;
+  }
+  .cmd-preview .prompt-symbol { color: var(--text-dim); }
+  .result-box {
+    border-radius: 6px; min-height: 60px;
+    text-align: center;
+    overflow: hidden;
+  }
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: 6px;
+    padding: 4px 10px; cursor: pointer; position: relative;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .drop-zone.drag-over { border-color: var(--accent); background: rgba(99,102,241,0.08); }
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .drop-hint { font-size: 12px; color: var(--text-dim); pointer-events: none; }
+  .drop-zone.has-file .drop-hint { font-size: 11px; color: var(--accent); }
+  .result-box img, .result-box video {
+    max-width: 100%; height: auto; border-radius: 6px;
+    display: inline-block;
+  }
+  .result-box pre {
+    width: 100%; padding: 16px; font-family: var(--font); font-size: 13px;
+    white-space: pre-wrap; word-break: break-word; color: var(--text);
+    background: #000; border-radius: 6px; margin: 0; text-align: left;
+  }
+  .result-box .placeholder {
+    padding: 32px; text-align: center; color: var(--text-dim);
+  }
+  .spinner {
+    width: 24px; height: 24px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error { color: var(--red); }
+  .hidden { display: none !important; }
+  .flex-center { display: flex; align-items: center; gap: 8px; }
+  .mt-12 { margin-top: 12px; }
+  .mb-12 { margin-bottom: 12px; }
+  .tag {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 600;
+  }
+  .tag-green { background: rgba(46,204,113,.15); color: var(--green); }
+  .tag-dim { background: rgba(136,136,136,.1); color: var(--text-dim); }
+  .cli-section { background: #000; border-radius: 6px; padding: 16px; }
+  .help-text { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<h1><span>♢</span> Agnes CLI Playground</h1>
+<p class="subtitle">Try every Agnes AI command interactively. See the equivalent CLI command for each action.</p>
+
+<div class="card">
+  <div class="card-title">API Key</div>
+  <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off">
+</div>
+
+<div class="card">
+  <div class="card-title">Function</div>
+  <div class="mode-tabs" id="modeTabs">
+    <div class="mode-tab active" data-mode="text">Text</div>
+    <div class="mode-tab" data-mode="image">Image</div>
+    <div class="mode-tab" data-mode="video">Video</div>
+  </div>
+
+  <label>Sub-mode</label>
+  <select id="subMode"></select>
+</div>
+
+<div class="card" id="promptCard">
+  <label>Prompt</label>
+  <textarea id="prompt" placeholder="Enter your prompt..."></textarea>
+</div>
+
+<div class="card hidden" id="extraCard">
+  <div class="card-title">Extra Options</div>
+  <div id="extraFields"></div>
+</div>
+
+<div class="card">
+  <div class="card-title">CLI Command</div>
+  <div class="cmd-preview" id="cmdPreview"><span class="prompt-symbol">$ </span>Select options above to see the command</div>
+</div>
+
+<div class="flex-center mb-12">
+  <button class="btn btn-primary" id="runBtn" disabled>
+    <span>▶</span> Run
+  </button>
+  <div id="statusText" style="font-size:13px;color:var(--text-dim)"></div>
+</div>
+
+<div class="card" id="resultCard">
+  <div class="card-title">Result</div>
+  <div class="result-box" id="resultBox">
+    <div class="placeholder">Run a command to see results here</div>
+  </div>
+</div>
+
+<script>
+const MODES = {
+  text: {
+    sub_modes: [
+      { value: "chat", label: "Chat", cli: (p,e) => `python scripts/agnes.py text --prompt "${p}"${e.system ? ` --system "${e.system}"` : ""}` },
+      { value: "stream", label: "Streaming", cli: (p,e) => `python scripts/agnes.py text --prompt "${p}" --stream${e.system ? ` --system "${e.system}"` : ""}` },
+      { value: "json", label: "JSON Output", cli: (p,e) => `python scripts/agnes.py text --prompt "${p}" --json-output${e.system ? ` --system "${e.system}"` : ""}` },
+      { value: "describe", label: "Describe Image", cli: (p,e) => `python scripts/agnes.py text --prompt "${p}" --image-url "{image}"` },
+    ],
+    extra: (sm) => {
+      if (sm === "describe") {
+        return [
+          { key: "image_data", label: "Image File", type: "file" },
+          { key: "system", label: "System Prompt", type: "text", placeholder: "Optional: describe style, mood, etc." },
+        ];
+      }
+      return sm === "chat" || sm === "stream" || sm === "json"
+        ? [{ key: "system", label: "System Prompt", type: "text", placeholder: "Optional system prompt" }]
+        : [];
+    },
+    file_label: "Text"
+  },
+  image: {
+    sub_modes: [
+      { value: "text2img", label: "Text to Image", cli: (p,e) => `python scripts/agnes.py image text2img --prompt "${p}" --output-dir examples/outputs${e.img_size ? ` --size ${e.img_size}` : ""}` },
+      { value: "img2img", label: "Image to Image", cli: (p,e) => `python scripts/agnes.py image img2img --prompt "${p}" --image-url "{image}" --output-dir examples/outputs` },
+      { value: "compose", label: "Multi-image Compose", cli: (p,e) => `python scripts/agnes.py image compose --prompt "${p}" --image-url "{img1}" --image-url "{img2}" [--image-url "{img3}" --image-url "{img4}"] --output-dir examples/outputs` },
+    ],
+    extra: (sm) => {
+      const RATIOS = [
+        { value: "auto", label: "Auto" },
+        { value: "1:1", label: "1:1" },
+        { value: "3:4", label: "3:4" },
+        { value: "4:3", label: "4:3" },
+        { value: "16:9", label: "16:9" },
+        { value: "9:16", label: "9:16" },
+        { value: "2:3", label: "2:3" },
+        { value: "3:2", label: "3:2" },
+        { value: "21:9", label: "21:9" },
+      ];
+      const RES = [
+        { value: "1K", label: "1K" },
+        { value: "2K", label: "2K" },
+        { value: "4K", label: "4K" },
+      ];
+      const fields = [
+        { key: "img_ratio", label: "Ratio", type: "select", options: RATIOS },
+        { key: "img_res", label: "Resolution", type: "select", options: RES },
+        { key: "img_size_hint", label: "Pixel Size", type: "display" },
+      ];
+      if (sm === "img2img") fields.push({ key: "image_data", label: "Image File", type: "file" });
+      if (sm === "compose") {
+        fields.push(
+          { key: "image_data1", label: "Image File 1", type: "file" },
+          { key: "image_data2", label: "Image File 2", type: "file" },
+          { key: "image_data3", label: "Image File 3", type: "file" },
+          { key: "image_data4", label: "Image File 4", type: "file" }
+        );
+      }
+      return fields;
+    },
+    file_label: "Image"
+  },
+  video: {
+    sub_modes: [
+      { value: "text2video", label: "Text to Video", cli: (p,e) => `python scripts/agnes.py video text2video --prompt "${p}" --width "{w}" --height "{h}" --num-frames "{frames}" --frame-rate 24 --download --output-dir examples/outputs` },
+      { value: "img2video", label: "Image to Video", cli: (p,e) => `python scripts/agnes.py video img2video --prompt "${p}" --image-url "{image}" --width "{w}" --height "{h}" --num-frames "{frames}" --frame-rate 24 --download --output-dir examples/outputs` },
+      { value: "keyframes", label: "Start and End Frames", cli: (p,e) => `python scripts/agnes.py video keyframes --prompt "${p}" --image-url "{start}" --image-url "{end}" --width "{w}" --height "{h}" --num-frames "{frames}" --frame-rate 24 --download --output-dir examples/outputs` },
+    ],
+    extra: (sm) => {
+      const RATIOS = [
+        { value: "auto", label: "Auto" },
+        { value: "9:16", label: "9:16" },
+        { value: "16:9", label: "16:9" },
+        { value: "1:1", label: "1:1" },
+        { value: "4:3", label: "4:3" },
+        { value: "3:4", label: "3:4" },
+        { value: "3:2", label: "3:2" },
+        { value: "2:3", label: "2:3" },
+        { value: "21:9", label: "21:9" },
+      ];
+      const RES = [
+        { value: "720P", label: "720P" },
+        { value: "480P", label: "480P" },
+      ];
+      const DURS = Array.from({length:11}, (_,i) => {
+        const s = i + 5;
+        return { value: String(s), label: `${s}s` };
+      });
+      const fields = [
+        { key: "vid_ratio", label: "Ratio", type: "select", options: RATIOS },
+        { key: "vid_res", label: "Resolution", type: "select", options: RES },
+        { key: "vid_duration", label: "Duration", type: "select", options: DURS },
+        { key: "vid_hint", label: "Details", type: "display" },
+      ];
+      if (sm === "img2video") fields.push({ key: "image_data", label: "Image File", type: "file" });
+      if (sm === "keyframes") {
+        fields.push(
+          { key: "image_data1", label: "Start Frame", type: "file" },
+          { key: "image_data2", label: "End Frame", type: "file" }
+        );
+      }
+      return fields;
+    },
+    file_label: "Video"
+  }
+};
+
+// --- size computation helpers ---
+function round8(n) { return Math.round(n / 8) * 8; }
+function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+function ratioStr(w, h) { const g = gcd(w, h); return `${w/g}:${h/g}`; }
+
+const IMG_PX = { "1K": 1024, "2K": 2048, "4K": 4096 };
+const VID_PX = { "480P": 480, "720P": 720 };
+
+function computeImgSize(ratio, res, inputW, inputH) {
+  if (ratio === "auto" && inputW && inputH) {
+    const px = IMG_PX[res] || 1024;
+    const aspect = inputW / inputH;
+    if (aspect >= 1) return `${px}x${round8(px / aspect)}`;
+    return `${round8(px * aspect)}x${px}`;
+  }
+  if (ratio === "auto") return "1024x768";
+  const px = IMG_PX[res] || 1024;
+  const [wa, ha] = ratio.split(":").map(Number);
+  if (wa === ha) return `${px}x${px}`;
+  if (wa > ha) return `${px}x${round8(px * ha / wa)}`;
+  return `${round8(px * wa / ha)}x${px}`;
+}
+
+function computeVidSize(ratio, res, inputW, inputH) {
+  if (ratio === "auto" && inputW && inputH) {
+    const px = VID_PX[res] || 720;
+    const aspect = inputW / inputH;
+    if (aspect >= 1) return { w: px, h: round8(px / aspect) };
+    return { w: round8(px * aspect), h: px };
+  }
+  if (ratio === "auto") ratio = "16:9";
+  const px = VID_PX[res] || 720;
+  const [wa, ha] = ratio.split(":").map(Number);
+  if (wa === ha) return { w: px, h: px };
+  if (wa > ha) return { w: round8(px * wa / ha), h: px };
+  return { w: px, h: round8(px * ha / wa) };
+}
+
+function computeVidFrames(durationSec) {
+  const raw = parseInt(durationSec) * 24;
+  // snap to 8n+1
+  const n = Math.round((raw - 1) / 8);
+  return Math.max(9, Math.min(441, n * 8 + 1));
+}
+
+let currentMode = "text";
+let currentSubMode = "chat";
+
+function getMode() { return MODES[currentMode]; }
+function getSubMode() { return getMode().sub_modes.find(s => s.value === currentSubMode); }
+
+function renderSubModes() {
+  const sel = document.getElementById("subMode");
+  const modes = MODES[currentMode].sub_modes;
+  sel.innerHTML = modes.map((m,i) => `<option value="${m.value}" ${i===0?"selected":""}>${m.label}</option>`).join("");
+  currentSubMode = modes[0].value;
+  renderExtra();
+  updateCmd();
+}
+
+function renderExtra() {
+  const card = document.getElementById("extraCard");
+  const fields = MODES[currentMode].extra(currentSubMode);
+  if (!fields.length) { card.classList.add("hidden"); return; }
+  card.classList.remove("hidden");
+  const saved = {};
+  document.querySelectorAll("[id^=extra_]").forEach(el => { saved[el.id.replace("extra_","")] = el.value; });
+  document.getElementById("extraFields").innerHTML = fields.map(f => {
+    const val = saved[f.key] !== undefined ? saved[f.key] : (f.value || "");
+    let input = "";
+    if (f.type === "display") {
+      input = `<span id="extra_${f.key}" class="help-text"></span>`;
+    } else if (f.type === "select") {
+      input = `<select id="extra_${f.key}">${f.options.map(o => {
+        const v = typeof o === "object" ? o.value : o;
+        const l = typeof o === "object" ? o.label : o;
+        return `<option value="${v}" ${v === val ? "selected" : ""}>${l}</option>`;
+      }).join("")}</select>`;
+    } else if (f.type === "number") {
+      input = `<input type="number" id="extra_${f.key}" value="${val}" min="${f.min||""}" max="${f.max||""}" step="${f.step||""}">`;
+    } else if (f.type === "file") {
+      input = `<div class="drop-zone" id="extra_${f.key}_zone"><input type="file" id="extra_${f.key}" accept="image/*" onchange="readFileToBase64(this)"><span class="drop-hint">Click or drag image here</span></div><input type="hidden" id="extra_${f.key}_b64">`;
+    } else {
+      input = `<input type="text" id="extra_${f.key}" placeholder="${f.placeholder || ""}" value="${val}">`;
+    }
+    return `<div class="mb-12"><label>${f.label}</label>${input}</div>`;
+  }).join("");
+}
+
+const inputDims = {};
+
+document.addEventListener("dragenter", e => {
+  const zone = e.target.closest(".drop-zone");
+  if (zone) zone.classList.add("drag-over");
+});
+document.addEventListener("dragleave", e => {
+  const zone = e.target.closest(".drop-zone");
+  if (zone && !zone.contains(e.relatedTarget)) zone.classList.remove("drag-over");
+});
+document.addEventListener("dragover", e => e.preventDefault());
+document.addEventListener("drop", e => {
+  e.preventDefault();
+  const zone = e.target.closest(".drop-zone");
+  if (!zone) return;
+  zone.classList.remove("drag-over");
+  const fileInput = zone.querySelector("input[type=file]");
+  if (fileInput && e.dataTransfer.files.length) {
+    fileInput.files = e.dataTransfer.files;
+    fileInput.dispatchEvent(new Event("change"));
+  }
+});
+
+function readFileToBase64(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const key = input.id;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result;
+    const b64 = dataUrl.split(",")[1];
+    document.getElementById(input.id + "_b64").value = b64;
+    const img = new Image();
+    img.onload = () => {
+      inputDims[key] = { w: img.naturalWidth, h: img.naturalHeight };
+      if (key === "extra_image_data") updateCmd();
+    };
+    img.src = dataUrl;
+  };
+  reader.readAsDataURL(file);
+  // Show filename in drop zone
+  const zone = input.closest(".drop-zone");
+  const hint = zone?.querySelector(".drop-hint");
+  if (hint) { hint.textContent = file.name; zone.classList.add("has-file"); }
+}
+
+function getExtraValues() {
+  const fields = MODES[currentMode].extra(currentSubMode);
+  const vals = {};
+  fields.forEach(f => {
+    if (f.type === "file") {
+      const b64 = document.getElementById(`extra_${f.key}_b64`);
+      vals[f.key] = b64 ? b64.value : "";
+    } else {
+      const el = document.getElementById(`extra_${f.key}`);
+      if (el) vals[f.key] = el.value;
+    }
+  });
+  return vals;
+}
+
+function updateCmd() {
+  const mode = MODES[currentMode];
+  const sm = mode.sub_modes.find(s => s.value === currentSubMode);
+  if (!sm) return;
+  const prompt = document.getElementById("prompt").value || "<prompt>";
+  const extra = getExtraValues();
+  document.getElementById("cmdPreview").innerHTML =
+    `<span class="prompt-symbol">$ </span>${sm.cli(prompt, extra)}`;
+  // Update image size hint
+  const imgHint = document.getElementById("extra_img_size_hint");
+  if (imgHint) {
+    const ratio = document.getElementById("extra_img_ratio")?.value || "auto";
+    const res = document.getElementById("extra_img_res")?.value || "1K";
+    const dims = currentSubMode === "img2img" ? (inputDims["extra_image_data"] || null) : null;
+    const iw = dims ? dims.w : null;
+    const ih = dims ? dims.h : null;
+    const size = computeImgSize(ratio, res, iw, ih);
+    imgHint.textContent = (ratio === "auto" && dims) ? `${size} (from ${dims.w}×${dims.h} input)` : size;
+  }
+  // Update video hint
+  const vidHint = document.getElementById("extra_vid_hint");
+  if (vidHint) {
+    const ratio = document.getElementById("extra_vid_ratio")?.value || "auto";
+    const res = document.getElementById("extra_vid_res")?.value || "720P";
+    const dur = document.getElementById("extra_vid_duration")?.value || "5";
+    const dims = (currentSubMode === "img2video" || currentSubMode === "keyframes")
+      ? (inputDims["extra_image_data"] || null)
+      : null;
+    const iw = dims ? dims.w : null;
+    const ih = dims ? dims.h : null;
+    const sz = computeVidSize(ratio, res, iw, ih);
+    const frames = computeVidFrames(dur);
+    vidHint.textContent = (ratio === "auto" && dims)
+      ? `${sz.w}×${sz.h} (from ${dims.w}×${dims.h} input) · ${frames} frames · ~${dur}s`
+      : `${sz.w}×${sz.h} · ${frames} frames · ~${dur}s`;
+  }
+}
+
+document.getElementById("modeTabs").addEventListener("click", e => {
+  const tab = e.target.closest(".mode-tab");
+  if (!tab) return;
+  document.querySelectorAll(".mode-tab").forEach(t => t.classList.remove("active"));
+  tab.classList.add("active");
+  currentMode = tab.dataset.mode;
+  renderSubModes();
+  updateCmd();
+});
+
+document.getElementById("subMode").addEventListener("change", e => {
+  currentSubMode = e.target.value;
+  renderExtra();
+  updateCmd();
+});
+
+document.getElementById("prompt").addEventListener("input", updateCmd);
+
+document.addEventListener("change", e => {
+  if (e.target.id?.startsWith("extra_")) updateCmd();
+});
+
+document.addEventListener("input", e => {
+  if (e.target.id?.startsWith("extra_")) updateCmd();
+});
+
+document.getElementById("apiKey").addEventListener("input", () => {
+  document.getElementById("runBtn").disabled = !document.getElementById("apiKey").value.trim();
+});
+
+function cropToRatio(b64, ratio) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const [wa, ha] = ratio.split(":").map(Number);
+      const target = wa / ha, src = img.naturalWidth / img.naturalHeight;
+      if (Math.abs(target - src) < 0.01) { resolve(b64); return; }
+      let sw, sh, sx, sy;
+      if (target > src) {
+        sh = img.naturalHeight; sw = Math.round(sh * target);
+        sx = Math.round((img.naturalWidth - sw) / 2); sy = 0;
+      } else {
+        sw = img.naturalWidth; sh = Math.round(sw / target);
+        sx = 0; sy = Math.round((img.naturalHeight - sh) / 2);
+      }
+      const c = document.createElement("canvas");
+      c.width = sw; c.height = sh;
+      c.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+      resolve(c.toDataURL("image/png").split(",")[1]);
+    };
+    img.src = "data:image/png;base64," + b64;
+  });
+}
+
+function setResult(html) {
+  const box = document.getElementById("resultBox");
+  box.innerHTML = html;
+}
+
+function showSpinner() {
+  setResult('<div class="spinner"></div>');
+}
+
+document.getElementById("runBtn").addEventListener("click", async () => {
+  const apiKey = document.getElementById("apiKey").value.trim();
+  if (!apiKey) return;
+
+  const prompt = document.getElementById("prompt").value.trim();
+  const extra = getExtraValues();
+
+  // Compute image/video sizes from ratio/resolution
+  if (currentMode === "image") {
+    const dims = inputDims["extra_image_data"] || null;
+    const iw = dims && (currentSubMode === "img2img") ? dims.w : null;
+    const ih = dims && (currentSubMode === "img2img") ? dims.h : null;
+    extra.size = computeImgSize(extra.img_ratio || "auto", extra.img_res || "1K", iw, ih);
+  }
+  if (currentMode === "video") {
+    const dims = inputDims["extra_image_data"] || null;
+    const iw = dims && (currentSubMode === "img2video" || currentSubMode === "keyframes") ? dims.w : null;
+    const ih = dims && (currentSubMode === "img2video" || currentSubMode === "keyframes") ? dims.h : null;
+    const sz = computeVidSize(extra.vid_ratio || "auto", extra.vid_res || "720P", iw, ih);
+    extra.vid_w = sz.w;
+    extra.vid_h = sz.h;
+    extra.vid_frames = computeVidFrames(extra.vid_duration || "5");
+  }
+
+  const body = {
+    api_key: apiKey,
+    mode: currentMode,
+    sub_mode: currentSubMode,
+    prompt: prompt,
+    extra: extra
+  };
+
+  // Crop input images to target ratio if they differ (prevents stretching)
+  const needCrop = (sm) => ["img2img", "compose", "img2video", "keyframes"].includes(sm);
+  const ratio = currentMode === "image" ? (extra.img_ratio || "auto") : (extra.vid_ratio || "auto");
+  if (needCrop(currentSubMode) && ratio !== "auto") {
+    for (const k of ["image_data", "image_data1", "image_data2", "image_data3", "image_data4"]) {
+      const b64 = extra[k];
+      if (b64) extra[k] = await cropToRatio(b64, ratio);
+    }
+  }
+
+  showSpinner();
+  document.getElementById("statusText").textContent = "Running...";
+  document.getElementById("runBtn").disabled = true;
+
+  try {
+    const res = await fetch("/api/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    if (!data.ok) {
+      setResult(`<pre class="error">Error: ${data.error}</pre>`);
+      document.getElementById("statusText").textContent = "Failed";
+      return;
+    }
+
+    document.getElementById("statusText").textContent = "Done";
+
+    if (data.type === "text") {
+      const c = data.content;
+      setResult(c != null && c !== ""
+        ? `<pre>${escapeHtml(c)}</pre>`
+        : `<pre class="placeholder">No content returned</pre>`);
+    } else if (data.type === "json") {
+      setResult(`<pre>${escapeHtml(JSON.stringify(data.content, null, 2))}</pre>`);
+    } else if (data.type === "image") {
+      setResult(data.url
+        ? `<img src="${data.url}" alt="Generated image" onerror="this.parentElement.innerHTML='<pre class=\\'error\\'>Image failed to load</pre>'">`
+        : `<pre class="error">No image URL returned</pre>`);
+    } else if (data.type === "video") {
+      setResult(data.url
+        ? `<video controls src="${data.url}" onerror="this.parentElement.innerHTML='<pre class=\\'error\\'>Video failed to load</pre>'"></video>`
+        : `<pre class="error">No video URL returned</pre>`);
+    }
+  } catch (e) {
+    setResult(`<pre class="error">Network error: ${e.message}</pre>`);
+    document.getElementById("statusText").textContent = "Error";
+  } finally {
+    document.getElementById("runBtn").disabled = false;
+  }
+});
+
+function escapeHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// Init
+renderSubModes();
+</script>
+</body>
+</html>
