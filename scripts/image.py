@@ -41,8 +41,12 @@ def generate(prompt, mode="text2img", image_b64s=None, size="1024x768", output_d
     if not items:
         sys.exit("No images returned")
 
+    first = items[0]
+    if not first.get("url") and not first.get("b64_json"):
+        sys.exit(f"Unexpected API response: {json.dumps(first)[:200]}")
+
     # b64_json response → decode and save
-    if "b64_json" in items[0]:
+    if first.get("b64_json"):
         out = []
         for item in items:
             raw = base64.b64decode(item["b64_json"])
