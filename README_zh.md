@@ -309,7 +309,6 @@ Agnes-AI/
 │   ├── translate.py  # 自动翻译
 │   └── media.py      # 媒体上传与下载
 ├── references/       # API 参考文档
-├── examples/         # 示例与应用
 ├── tests/            # 测试
 └── agents/           # Agent 配置文件
 ```
