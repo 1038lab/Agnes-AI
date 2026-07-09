@@ -180,8 +180,7 @@ agnes video text2video --prompt "Waterfall" \
 # Disable polling, just get the task_id
 agnes video text2video --prompt "Sunset" --no-poll
 ```
-https://github.com/user-attachments/assets/25af3d70-c242-4c10-9320-6107f23b9320<img width="1716" height="917" alt="Jul 9, 2026, 01_03_08 PM" src="https://github.com/user-attachments/assets/8359b4cb-e7c9-446d-bc31-399c1eabba46" />
-
+https://github.com/user-attachments/assets/25af3d70-c242-4c10-9320-6107f23b9320
 
 | Argument | Description |
 |----------|-------------|
