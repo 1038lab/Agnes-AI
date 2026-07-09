@@ -1,0 +1,10 @@
+name: Agnes-AI
+description: Generate text, describe images, and create images/videos using Agnes AI models
+agent_type: skill
+version: 1.0.0
+instructions:
+  - You have access to the agnes CLI tool for Agnes AI API.
+  - Run `python3 scripts/agnes.py --help` to see available commands.
+  - For text generation use `agnes text`, for images use `agnes image`,
+    for videos use `agnes video`.
+  - Never hardcode API keys — read from env var AGNES_API_KEY.
