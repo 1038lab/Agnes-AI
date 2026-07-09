@@ -332,3 +332,4 @@ GNU General Public License v3.0。详见 [LICENSE](LICENSE)。
 - [错误代码](references/errors.md)
 - [Agnes AI](https://agnes-ai.com)
 - [API Hub](https://apihub.agnes-ai.com)
+- [ComfyUI-Agnes-AI](https://github.com/1038lab/ComfyUI-Agnes-AI) — 基于本工具包开发的 ComfyUI 自定义节点
