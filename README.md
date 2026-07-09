@@ -1,5 +1,6 @@
 # Agnes-AI
 
+![Agnes-AI](https://github.com/user-attachments/assets/4cbcaa09-e704-4c9b-90ba-b89b1b7fbc90)
 A unified Python CLI for Agnes AI models — text generation, image
 understanding, image generation, and video generation, all with zero external
 dependencies.
@@ -125,6 +126,8 @@ agnes text --prompt "What is 1+1?" --message "user: What is 2+2?" --message "ass
 
 Image generation.
 
+![Agnes-AI Image](https://github.com/user-attachments/assets/dd371b71-e93a-4fb4-b98a-ad6ef4ffc78c)
+
 ```bash
 # Text-to-image
 agnes image text2img --prompt "Cyberpunk city at night"
@@ -153,6 +156,8 @@ agnes image text2img --prompt "An oil painting" --size "1920x1080" --output-dir 
 
 Video generation with automatic polling and optional download.
 
+![Agnes-AI Video](https://github.com/user-attachments/assets/6ea1e190-412a-4950-913b-9f30d8aa7d1e)
+
 ```bash
 # Text-to-video (auto-poll)
 agnes video text2video --prompt "A butterfly flying through a flower field"
@@ -175,6 +180,8 @@ agnes video text2video --prompt "Waterfall" \
 # Disable polling, just get the task_id
 agnes video text2video --prompt "Sunset" --no-poll
 ```
+https://github.com/user-attachments/assets/25af3d70-c242-4c10-9320-6107f23b9320<img width="1716" height="917" alt="Jul 9, 2026, 01_03_08 PM" src="https://github.com/user-attachments/assets/8359b4cb-e7c9-446d-bc31-399c1eabba46" />
+
 
 | Argument | Description |
 |----------|-------------|
