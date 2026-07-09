@@ -330,3 +330,4 @@ GNU General Public License v3.0. See [LICENSE](LICENSE).
 - [Error Codes](references/errors.md)
 - [Agnes AI](https://agnes-ai.com)
 - [API Hub](https://apihub.agnes-ai.com)
+- [ComfyUI-Agnes-AI](https://github.com/1038lab/ComfyUI-Agnes-AI) — ComfyUI custom nodes built on this toolkit
