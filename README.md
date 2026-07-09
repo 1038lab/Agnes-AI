@@ -4,7 +4,7 @@ A unified Python CLI for Agnes AI models — text generation, image
 understanding, image generation, and video generation, all with zero external
 dependencies.
 
-Built by [AILab](https://github.com/1038lab). This repo wraps every Agnes API
+Built by [AI Lab](https://github.com/1038lab). This repo wraps every Agnes API
 endpoint into a single `agnes.py` with sensible defaults, auto-translation,
 and dry-run validation — no pip install required.
 
