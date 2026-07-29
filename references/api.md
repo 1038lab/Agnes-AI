@@ -4,17 +4,22 @@
 
 **Authentication:** Bearer token via `Authorization` header
 
+
 ```
 Authorization: Bearer <your-agnes-api-key>
 ```
 
+
 **Models:**
 
-| Model | ID | Endpoint |
-|-------|-----|----------|
-| Agnes 2.0 Flash (text) | `agnes-2.0-flash` | `/v1/chat/completions` |
-| Agnes Image 2.1 Flash | `agnes-image-2.1-flash` | `/v1/images/generations` |
-| Agnes Video v2.0 | `agnes-video-v2.0` | `/v1/videos` |
+| Model | ID | Endpoint | Notes |
+|-------|-----|----------|-------|
+| Agnes 2.5 Flash | `agnes-2.5-flash` | `/v1/chat/completions` | Default text model (Free) |
+| Agnes 2.5 Pro Alpha | `agnes-2.5-pro-alpha` | `/v1/chat/completions` | Paid text model |
+| Agnes 2.0 Flash | `agnes-2.0-flash` | `/v1/chat/completions` | Legacy text model |
+| Agnes 1.5 Flash | `agnes-1.5-flash` | `/v1/chat/completions` | Legacy text model |
+| Agnes Image 2.1 Flash | `agnes-image-2.1-flash` | `/v1/images/generations` | Default image model |
+| Agnes Video v2.0 | `agnes-video-v2.0` | `/v1/videos` | Default video model |
 
 ---
 
@@ -26,7 +31,7 @@ Authorization: Bearer <your-agnes-api-key>
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `model` | string | yes | — | Must be `agnes-2.0-flash` |
+| `model` | string | yes | — | `agnes-2.5-flash` (default), `agnes-2.5-pro-alpha` (paid), `agnes-2.0-flash`, `agnes-1.5-flash` |
 | `messages` | array | yes | — | Array of `{role, content}` objects |
 | `temperature` | float | no | `0.7` | Sampling temperature (0–2) |
 | `top_p` | float | no | `0.9` | Nucleus sampling threshold |
@@ -39,7 +44,7 @@ Authorization: Bearer <your-agnes-api-key>
 
 ```json
 {
-  "model": "agnes-2.0-flash",
+  "model": "agnes-2.5-flash",
   "messages": [
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "Write a haiku about AI."}
@@ -56,7 +61,7 @@ Authorization: Bearer <your-agnes-api-key>
   "id": "chatcmpl-xxx",
   "object": "chat.completion",
   "created": 1700000000,
-  "model": "agnes-2.0-flash",
+  "model": "agnes-2.5-flash",
   "choices": [
     {
       "index": 0,
@@ -98,7 +103,7 @@ curl -s https://apihub.agnes-ai.com/v1/chat/completions \
   -H "Authorization: Bearer $AGNES_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "agnes-2.0-flash",
+    "model": "agnes-2.5-flash",
     "messages": [{"role": "user", "content": "Hello!"}],
     "stream": true
   }'
