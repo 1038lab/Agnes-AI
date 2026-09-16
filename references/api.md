@@ -4,22 +4,22 @@
 
 **Authentication:** Bearer token via `Authorization` header
 
-
 ```
 Authorization: Bearer <your-agnes-api-key>
 ```
 
-
 **Models:**
 
-| Model | ID | Endpoint | Notes |
-|-------|-----|----------|-------|
-| Agnes 2.5 Flash | `agnes-2.5-flash` | `/v1/chat/completions` | Default text model (Free) |
-| Agnes 2.5 Pro Alpha | `agnes-2.5-pro-alpha` | `/v1/chat/completions` | Paid text model |
-| Agnes 2.0 Flash | `agnes-2.0-flash` | `/v1/chat/completions` | Legacy text model |
-| Agnes 1.5 Flash | `agnes-1.5-flash` | `/v1/chat/completions` | Legacy text model |
-| Agnes Image 2.1 Flash | `agnes-image-2.1-flash` | `/v1/images/generations` | Default image model |
-| Agnes Video v2.0 | `agnes-video-v2.0` | `/v1/videos` | Default video model |
+| Model | ID | Endpoint |
+|-------|-----|----------|
+| Agnes 3.0 Flash (text & vision, Default) | `agnes-3.0-flash` | `/v1/chat/completions` |
+| Agnes 2.5 Pro (text) | `agnes-2.5-pro` | `/v1/chat/completions` |
+| Agnes 2.0 Flash (text, legacy) | `agnes-2.0-flash` | `/v1/chat/completions` |
+| Agnes Image 2.5 Flash (image, Default) | `agnes-image-2.5-flash` | `/v1/images/generations` |
+| Agnes Image 2.1 Flash (image, legacy) | `agnes-image-2.1-flash` | `/v1/images/generations` |
+| Agnes Video 2.5 Flash (video 720P, Default) | `agnes-video-2.5-flash` | `/v1/videos` |
+| Agnes Video 2.5 (video 720P–2K) | `agnes-video-2.5` | `/v1/videos` |
+| Agnes Video v2.0 (video, legacy) | `agnes-video-v2.0` | `/v1/videos` |
 
 ---
 
@@ -31,7 +31,7 @@ Authorization: Bearer <your-agnes-api-key>
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `model` | string | yes | — | `agnes-2.5-flash` (default), `agnes-2.5-pro-alpha` (paid), `agnes-2.0-flash`, `agnes-1.5-flash` |
+| `model` | string | yes | — | Must be `agnes-3.0-flash` (or `agnes-2.5-pro`, `agnes-2.0-flash`) |
 | `messages` | array | yes | — | Array of `{role, content}` objects |
 | `temperature` | float | no | `0.7` | Sampling temperature (0–2) |
 | `top_p` | float | no | `0.9` | Nucleus sampling threshold |
@@ -44,7 +44,7 @@ Authorization: Bearer <your-agnes-api-key>
 
 ```json
 {
-  "model": "agnes-2.5-flash",
+  "model": "agnes-3.0-flash",
   "messages": [
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "Write a haiku about AI."}
@@ -61,7 +61,7 @@ Authorization: Bearer <your-agnes-api-key>
   "id": "chatcmpl-xxx",
   "object": "chat.completion",
   "created": 1700000000,
-  "model": "agnes-2.5-flash",
+  "model": "agnes-3.0-flash",
   "choices": [
     {
       "index": 0,
@@ -103,54 +103,10 @@ curl -s https://apihub.agnes-ai.com/v1/chat/completions \
   -H "Authorization: Bearer $AGNES_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "agnes-2.5-flash",
+    "model": "agnes-3.0-flash",
     "messages": [{"role": "user", "content": "Hello!"}],
     "stream": true
   }'
-```
-
-### Multimodal (Image Understanding)
-
-`agnes-2.0-flash` supports image inputs via OpenAI-compatible `content` array with `image_url` type. Send base64-encoded images as `data:image/png;base64,...` URIs.
-
-### Request
-
-```json
-{
-  "model": "agnes-2.0-flash",
-  "messages": [
-    {"role": "system", "content": "You are an expert image analyst."},
-    {
-      "role": "user",
-      "content": [
-        {"type": "image_url", "image_url": {"url": "data:image/png;base64,iVBORw0KGgo..."}},
-        {"type": "text", "text": "Describe this image in detail"}
-      ]
-    }
-  ],
-  "max_tokens": 2048
-}
-```
-
-### curl Example
-
-```bash
-# Encode image, then describe
-IMG_B64=$(base64 -i photo.jpg | tr -d '\n')
-curl -s https://apihub.agnes-ai.com/v1/chat/completions \
-  -H "Authorization: Bearer $AGNES_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"model\": \"agnes-2.0-flash\",
-    \"messages\": [
-      {\"role\": \"system\", \"content\": \"You are an expert image analyst.\"},
-      {\"role\": \"user\", \"content\": [
-        {\"type\": \"image_url\", \"image_url\": {\"url\": \"data:image/png;base64,$IMG_B64\"}},
-        {\"type\": \"text\", \"text\": \"Describe this image in detail\"}
-      ]}
-    ],
-    \"max_tokens\": 2048
-  }"
 ```
 
 ```bash
@@ -159,7 +115,7 @@ curl -s https://apihub.agnes-ai.com/v1/chat/completions \
   -H "Authorization: Bearer $AGNES_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "agnes-2.0-flash",
+    "model": "agnes-3.0-flash",
     "messages": [{"role": "user", "content": "What is the weather in Tokyo?"}],
     "tools": [
       {
@@ -191,19 +147,18 @@ curl -s https://apihub.agnes-ai.com/v1/chat/completions \
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `model` | string | yes | — | Must be `agnes-image-2.1-flash` |
+| `model` | string | yes | — | Must be `agnes-image-2.5-flash` or `agnes-image-2.1-flash` |
 | `prompt` | string | yes | — | Text description of the image |
 | `n` | int | no | `1` | Number of images to generate |
 | `size` | string | yes | — | Image dimensions (e.g. `1024x768`, `1024x1024`) |
-| `image` | string\|string[] | no* | — | Reference image(s) — URL string or raw base64 array inside `extra_body` |
+| `return_base64` | bool | no | — | Set to `true` for Base64 output (text2img only) |
 | `extra_body` | object | no | — | Advanced workflow parameters |
-| `extra_body.image` | string[] | no† | — | Reference image(s) as raw base64 strings (array, for img2img/compose) |
-| `extra_body.response_format` | string | no | — | Output format: `"b64_json"` when sending base64 input |
+| `extra_body.image` | string[] | no* | — | Reference image URLs (array) |
+| `extra_body.response_format` | string | no | — | Output format: `"url"` or `"b64_json"` (img2img) |
 
-\* For URL-based input: `image` is a top-level string (img2img) or array (compose).  
-† For base64 input: place `image` array inside `extra_body`. Response format will be `b64_json`.
+\* `extra_body.image` is required for `img2img` and `compose` modes.
 
-**Important:** When using base64 input with `extra_body.image`, set `extra_body.response_format` to `"b64_json"`. Do NOT place `response_format` at the top level.
+**Important:** Do NOT place `response_format` at the top level. Use `extra_body.response_format` instead.
 
 ### Modes
 
@@ -217,7 +172,7 @@ curl -s https://apihub.agnes-ai.com/v1/chat/completions \
 
 ```json
 {
-  "model": "agnes-image-2.1-flash",
+  "model": "agnes-image-2.5-flash",
   "prompt": "A serene mountain lake at sunset, digital art",
   "n": 1,
   "size": "1024x768"
@@ -228,13 +183,13 @@ curl -s https://apihub.agnes-ai.com/v1/chat/completions \
 
 ```json
 {
-  "model": "agnes-image-2.1-flash",
+  "model": "agnes-image-2.5-flash",
   "prompt": "Transform the scene into a rain-soaked cyberpunk night with neon reflections while preserving the original composition",
   "n": 1,
   "size": "1024x768",
   "extra_body": {
-    "image": ["<raw_base64_string>"],
-    "response_format": "b64_json"
+    "image": ["https://example.com/input-photo.jpg"],
+    "response_format": "url"
   }
 }
 ```
@@ -243,13 +198,13 @@ curl -s https://apihub.agnes-ai.com/v1/chat/completions \
 
 ```json
 {
-  "model": "agnes-image-2.1-flash",
+  "model": "agnes-image-2.5-flash",
   "prompt": "Merge these two images",
   "n": 1,
   "size": "1024x768",
   "extra_body": {
-    "image": ["<img1_base64>", "<img2_base64>"],
-    "response_format": "b64_json"
+    "image": ["https://example.com/image1.jpg", "https://example.com/image2.jpg"],
+    "response_format": "url"
   }
 }
 ```
@@ -267,43 +222,132 @@ curl -s https://apihub.agnes-ai.com/v1/chat/completions \
 }
 ```
 
-### curl Example (text2img)
+### curl Example
 
 ```bash
 curl -s https://apihub.agnes-ai.com/v1/images/generations \
   -H "Authorization: Bearer $AGNES_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "agnes-image-2.1-flash",
+    "model": "agnes-image-2.5-flash",
     "prompt": "A cat wearing a spacesuit, digital art",
     "n": 1,
     "size": "1024x768"
   }'
 ```
 
-### curl Example (img2img with base64)
+---
+
+## Video: Create (Modern 2.5 Protocol)
+
+**Endpoint:** `POST /v1/videos`
+
+Video generation is asynchronous. Submit a job, then poll for the result.
+
+### Parameters (Agnes Video 2.5 Series)
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `model` | string | yes | `agnes-video-2.5-flash` | `agnes-video-2.5-flash` or `agnes-video-2.5` |
+| `prompt` | string | yes | — | Video motion and scene description |
+| `mode` | string | no | `text` | Generation mode: `"text"`, `"img2video"`, `"keyframe"`, `"reference"` |
+| `seconds` | string / int | no | `5` | Duration in seconds (`4` to `12`) |
+| `size` | string | no | `720P` | Resolution: `720P`, `1080P`, `1K`, `2K` (*Flash model is restricted to 720P*) |
+| `aspect_ratio` | string | no | `16:9` | Aspect ratio: `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, `21:9` |
+| `seed` | int | no | — | Random seed for reproducibility |
+| `first_frame` | string | no | — | Base64 or URL for the starting frame (`img2video` / `keyframe`) |
+| `last_frame` | string | no | — | Base64 or URL for the ending frame (`keyframe`) |
+| `images` | array | no | — | Array of reference images (up to 5, `reference` mode) |
+| `audios` | array | no | — | Array of reference audios (up to 3, `reference` mode) |
+| `videos` | array | no | — | Array of reference videos (up to 3, `agnes-video-2.5` only) |
+
+### Request (Modern 2.5 text2video)
+
+```json
+{
+  "model": "agnes-video-2.5-flash",
+  "prompt": "A beautiful sunset over the ocean, cinematic quality",
+  "mode": "text",
+  "seconds": "5",
+  "size": "720P",
+  "aspect_ratio": "16:9",
+  "n": 1
+}
+```
+
+### Request (Modern 2.5 img2video)
+
+```json
+{
+  "model": "agnes-video-2.5-flash",
+  "prompt": "Animate this portrait with natural subtle head movement",
+  "mode": "img2video",
+  "first_frame": "<BASE64_OR_IMAGE_URL>",
+  "seconds": "5",
+  "size": "720P",
+  "aspect_ratio": "16:9",
+  "n": 1
+}
+```
+
+### Request (Modern 2.5 keyframe)
+
+```json
+{
+  "model": "agnes-video-2.5-flash",
+  "prompt": "Smooth morphing transition between two scene frames",
+  "mode": "keyframe",
+  "first_frame": "<BASE64_FIRST_FRAME>",
+  "last_frame": "<BASE64_LAST_FRAME>",
+  "seconds": "6",
+  "size": "720P",
+  "aspect_ratio": "16:9",
+  "n": 1
+}
+```
+
+### Request (Modern 2.5 reference)
+
+```json
+{
+  "model": "agnes-video-2.5",
+  "prompt": "Cinematic sequence guided by reference visual styles and audio rhythm",
+  "mode": "reference",
+  "images": ["<BASE64_IMG_1>", "<BASE64_IMG_2>"],
+  "audios": ["<BASE64_AUDIO_1>"],
+  "videos": ["<BASE64_VIDEO_1>"],
+  "seconds": "8",
+  "size": "1080P",
+  "aspect_ratio": "16:9",
+  "n": 1
+}
+```
+
+### Modern 2.5 curl Example
 
 ```bash
-# Encode image first, then send
-IMG_B64=$(base64 -i input.jpg | tr -d '\n')
-curl -s https://apihub.agnes-ai.com/v1/images/generations \
+# Submit modern video creation job
+curl -s https://apihub.agnes-ai.com/v1/videos \
   -H "Authorization: Bearer $AGNES_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{
-    \"model\": \"agnes-image-2.1-flash\",
-    \"prompt\": \"Transform this into a watercolor painting\",
-    \"n\": 1,
-    \"size\": \"1024x768\",
-    \"extra_body\": {
-      \"image\": [\"$IMG_B64\"],
-      \"response_format\": \"b64_json\"
-    }
-  }"
+  -d '{
+    "model": "agnes-video-2.5-flash",
+    "prompt": "A rocket launching into space, cinematic lighting",
+    "mode": "text",
+    "seconds": "5",
+    "size": "720P",
+    "aspect_ratio": "16:9",
+    "n": 1
+  }'
+
+# Poll for status with progress (0% to 100%)
+curl -s "https://apihub.agnes-ai.com/agnesapi?video_id=VIDEO_ID&model_name=agnes-video-2.5-flash" \
+  -H "Authorization: Bearer $AGNES_API_KEY"
 ```
 
 ---
 
-## Video: Create
+## Video: Create (Legacy v2.0 Protocol)
 
 **Endpoint:** `POST /v1/videos`
 
@@ -506,8 +550,6 @@ Video polling checks these status values:
 - Authentication is via Bearer token in the `Authorization` header.
 - The API base URL can be overridden via the `AGNES_API_BASE` environment variable.
 - Response formats follow OpenAI conventions for chat and image endpoints where applicable.
-- For img2img/compose with base64: `image` is a string **array** inside `extra_body`, with `response_format: "b64_json"`.
-- For img2video the `image` field is a top-level **string** (single base64), not an array.
+- For img2video the `image` field is a top-level **string** (singular URL), not an array.
 - For keyframes, `image` is a string array inside `extra_body`, along with `mode: "keyframes"`.
-- Raw base64 strings must NOT have a `data:image/...;base64,` prefix.
 - Do NOT use `image_urls`, `multi-image` mode, or top-level `response_format` — these are invalid for V2.0.
