@@ -278,11 +278,12 @@ const MODES = {
         { value: "21:9", label: "21:9" },
       ];
       const RES = [
-        { value: "720P", label: "720P" },
+        { value: "720P", label: "720P (Flash default)" },
+        { value: "1080P", label: "1080P (Standard)" },
         { value: "480P", label: "480P" },
       ];
-      const DURS = Array.from({length:11}, (_,i) => {
-        const s = i + 5;
+      const DURS = Array.from({length:9}, (_,i) => {
+        const s = i + 4;
         return { value: String(s), label: `${s}s` };
       });
       const fields = [
@@ -650,8 +651,5 @@ function escapeHtml(s) {
 // Init
 renderSubModes();
 </script>
-<div style="text-align:center;padding:16px 0;font-size:12px;color:var(--text-dim)">
-  Github: <a href="https://github.com/1038lab/Agnes-AI" target="_blank" style="color:var(--accent);text-decoration:none">1038lab/Agnes-AI</a>
-</div>
 </body>
 </html>

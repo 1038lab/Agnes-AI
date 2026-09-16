@@ -90,6 +90,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def run_text(self, sub_mode, prompt, extra):
         system = extra.get("system", "")
+        model = extra.get("model") or "agnes-3.0-flash"
         image_b64 = extra.get("image_data", "")
         image_b64s = [image_b64] if image_b64 else None
         buf = io.StringIO()
@@ -97,18 +98,18 @@ class Handler(SimpleHTTPRequestHandler):
             with redirect_stdout(buf):
                 text.chat(prompt or "Describe this image in detail",
                           system=system or None, image_b64s=image_b64s,
-                          max_tokens=extra.get("max_tokens", 2048))
+                          max_tokens=extra.get("max_tokens", 2048), model=model)
             return {"type": "text", "content": buf.getvalue()}
         if sub_mode == "stream":
             with redirect_stdout(buf):
-                r = text.chat(prompt, system=system or None, stream=True, max_tokens=extra.get("max_tokens", 512))
+                r = text.chat(prompt, system=system or None, stream=True, max_tokens=extra.get("max_tokens", 512), model=model)
             return {"type": "text", "content": r or buf.getvalue()}
         elif sub_mode == "json":
-            r = text.chat(prompt, system=system or None, json_output=True, max_tokens=extra.get("max_tokens", 512))
+            r = text.chat(prompt, system=system or None, json_output=True, max_tokens=extra.get("max_tokens", 512), model=model)
             return {"type": "json", "content": r}
         else:
             with redirect_stdout(buf):
-                text.chat(prompt, system=system or None, max_tokens=extra.get("max_tokens", 512))
+                text.chat(prompt, system=system or None, max_tokens=extra.get("max_tokens", 512), model=model)
             return {"type": "text", "content": buf.getvalue()}
 
     def _image_b64s(self, extra):
@@ -122,21 +123,22 @@ class Handler(SimpleHTTPRequestHandler):
     def run_image(self, sub_mode, prompt, extra):
         image_b64s = self._image_b64s(extra)
         size = extra.get("size") or "1024x768"
-        r = image.generate(prompt, mode=sub_mode, image_b64s=image_b64s, size=size, output_dir=OUTPUT_DIR)
+        model = extra.get("model") or "agnes-image-2.5-flash"
+        r = image.generate(prompt, mode=sub_mode, image_b64s=image_b64s, size=size, output_dir=OUTPUT_DIR, model=model)
         local_path = r[0] if isinstance(r, list) and r else None
         return {"type": "image", "url": f"/outputs/{os.path.basename(local_path)}" if local_path else None, "local_path": local_path}
 
     def run_video(self, sub_mode, prompt, extra):
         image_b64s = self._image_b64s(extra)
-        width = int(extra.get("vid_w", 1152))
-        height = int(extra.get("vid_h", 768))
-        num_frames = int(extra.get("vid_frames", 17))
-        frame_rate = 24
+        model = extra.get("model") or "agnes-video-2.5-flash"
+        seconds = int(extra.get("vid_duration") or extra.get("seconds") or 5)
+        aspect_ratio = extra.get("vid_ratio") or extra.get("aspect_ratio") or "16:9"
+        size = extra.get("vid_res") or extra.get("size") or "720P"
         r = video.create(
             prompt, mode=sub_mode, image_b64s=image_b64s,
-            width=width, height=height, num_frames=num_frames, frame_rate=frame_rate,
             download=True, output_dir=OUTPUT_DIR, poll=True,
-            poll_interval=5, timeout=300
+            poll_interval=5, timeout=300,
+            model=model, seconds=seconds, aspect_ratio=aspect_ratio, size=size
         )
         local_path = r.get("local_path")
         video_url = r.get("video_url")
