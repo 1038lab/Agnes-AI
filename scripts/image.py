@@ -8,10 +8,14 @@ def _get_key():
         sys.exit("Error: AGNES_API_KEY not set")
     return key
 
-def generate(prompt, mode="text2img", image_b64s=None, size="1024x768", output_dir=None, dry_run=False, api_base=None):
+def _headers():
+    return {"Authorization": f"Bearer {_get_key()}", "Content-Type": "application/json"}
+
+def generate(prompt, mode="text2img", image_b64s=None, size="1024x768", output_dir=None, dry_run=False, api_base=None, model=None):
     base = api_base or API_BASE
+    selected_model = model or "agnes-image-2.5-flash"
     body = {
-        "model": "agnes-image-2.1-flash",
+        "model": selected_model,
         "prompt": prompt,
         "n": 1,
         "size": size,
@@ -28,7 +32,7 @@ def generate(prompt, mode="text2img", image_b64s=None, size="1024x768", output_d
     req = urllib.request.Request(
         f"{base}/v1/images/generations",
         data=json.dumps(body).encode(),
-        headers={"Authorization": f"Bearer {_get_key()}", "Content-Type": "application/json"},
+        headers=_headers(),
         method="POST"
     )
     try:
@@ -41,12 +45,8 @@ def generate(prompt, mode="text2img", image_b64s=None, size="1024x768", output_d
     if not items:
         sys.exit("No images returned")
 
-    first = items[0]
-    if not first.get("url") and not first.get("b64_json"):
-        sys.exit(f"Unexpected API response: {json.dumps(first)[:200]}")
-
     # b64_json response → decode and save
-    if first.get("b64_json"):
+    if "b64_json" in items[0]:
         out = []
         for item in items:
             raw = base64.b64decode(item["b64_json"])
@@ -82,11 +82,12 @@ if __name__ == "__main__":
     parser.add_argument("--image-url", action="append")
     parser.add_argument("--size", default="1024x768")
     parser.add_argument("--output-dir")
+    parser.add_argument("--model", default="agnes-image-2.5-flash")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     from media import to_base64
     image_b64s = [to_base64(u) for u in args.image_url] if args.image_url else None
-    result = generate(args.prompt, args.mode, image_b64s, args.size, args.output_dir, args.dry_run)
+    result = generate(args.prompt, args.mode, image_b64s, args.size, args.output_dir, args.dry_run, model=args.model)
     if not args.dry_run:
         for p in result:
             print(p)

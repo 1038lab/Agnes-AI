@@ -13,7 +13,7 @@ def cmd_text(args):
     image_b64s = [media.to_base64(u) for u in (args.image_url or [])] if args.image_url else None
     translated = args.prompt
     if args.prompt and not args.no_translate and translate.needs_translation(args.prompt):
-        translated = translate.translate(args.prompt)
+        translated = translate.translate(args.prompt, model=args.model)
         if args.verbose:
             print(f"[translated] {args.prompt} -> {translated}", file=sys.stderr)
     result = text.chat(
@@ -21,7 +21,7 @@ def cmd_text(args):
         stream=args.stream, temperature=args.temperature, top_p=args.top_p,
         max_tokens=args.max_tokens, tools_json=args.tools_json,
         tool_choice=args.tool_choice, json_output=args.json_output,
-        dry_run=args.dry_run, image_b64s=image_b64s
+        dry_run=args.dry_run, image_b64s=image_b64s, model=args.model
     )
     if args.dry_run:
         print(json.dumps(result, indent=2))
@@ -37,7 +37,8 @@ def cmd_image(args):
     image_b64s = [media.to_base64(u) for u in (args.image_url or [])] if args.image_url else None
     result = image.generate(
         translated, mode=args.mode, image_b64s=image_b64s,
-        size=args.size, output_dir=args.output_dir, dry_run=args.dry_run
+        size=args.size, output_dir=args.output_dir, dry_run=args.dry_run,
+        model=args.model
     )
     if args.dry_run:
         print(json.dumps(result, indent=2))
@@ -52,6 +53,8 @@ def cmd_video(args):
         if args.verbose:
             print(f"[translated] {args.prompt} -> {translated}", file=sys.stderr)
     image_b64s = [media.to_base64(u) for u in (args.image_url or [])] if args.image_url else None
+    audios_b64 = [media.to_base64(u) for u in (args.audio_url or [])] if hasattr(args, "audio_url") and args.audio_url else None
+    videos_b64 = [media.to_base64(u) for u in (args.ref_video_url or [])] if hasattr(args, "ref_video_url") and args.ref_video_url else None
     result = video.create(
         translated, mode=args.mode, image_b64s=image_b64s,
         width=args.width, height=args.height, num_frames=args.num_frames,
@@ -60,7 +63,9 @@ def cmd_video(args):
         negative_prompt=args.negative_prompt,
         poll=not args.no_poll, poll_interval=args.poll_interval,
         timeout=args.timeout, download=args.download,
-        output_dir=args.output_dir, dry_run=args.dry_run
+        output_dir=args.output_dir, dry_run=args.dry_run,
+        model=args.model, seconds=args.seconds, aspect_ratio=args.aspect_ratio,
+        size=args.size, audios_b64=audios_b64, videos_b64=videos_b64
     )
     print(json.dumps(result, indent=2, ensure_ascii=False))
 
@@ -68,15 +73,15 @@ def cmd_video_poll(args):
     if args.dry_run:
         print(json.dumps({"dry_run": True, "video_id": args.video_id}, indent=2))
         return
-    result = video.poll_video(args.video_id, args.poll_interval, args.timeout, args.download, args.output_dir)
+    result = video.poll_video(args.video_id, args.poll_interval, args.timeout, args.download, args.output_dir, model_name=args.model)
     print(json.dumps(result, indent=2, ensure_ascii=False))
 
 def cmd_smoke_test(args):
     print("=== Agnes-AI Smoke Test ===")
-    # ponytail: smoke test runs text and image; video optional due to time
-    print("[text] testing basic chat...")
-    r = text.chat("Say hello", dry_run=True)
+    print("[text] testing basic chat with agnes-3.0-flash...")
+    r = text.chat("Say hello", dry_run=True, model="agnes-3.0-flash")
     assert r["dry_run"]
+    assert r["request"]["model"] == "agnes-3.0-flash"
     print("  PASS (dry-run)")
 
     print("[text] testing streaming...")
@@ -89,9 +94,10 @@ def cmd_smoke_test(args):
     assert r["dry_run"]
     print("  PASS (dry-run)")
 
-    print("[image] testing text2img...")
-    r = image.generate("test", dry_run=True)
+    print("[image] testing text2img with agnes-image-2.5-flash...")
+    r = image.generate("test", dry_run=True, model="agnes-image-2.5-flash")
     assert r["dry_run"]
+    assert r["request"]["model"] == "agnes-image-2.5-flash"
     print("  PASS (dry-run)")
 
     print("[image] testing img2img (dry-run)...")
@@ -99,11 +105,18 @@ def cmd_smoke_test(args):
     assert r["dry_run"]
     print("  PASS (dry-run)")
 
-    if args.video_case:
-        print(f"[video] testing {args.video_case}...")
-        r = video.create("test", mode=args.video_case, dry_run=True)
-        assert r["dry_run"]
-        print("  PASS (dry-run)")
+    print("[video] testing modern agnes-video-2.5-flash...")
+    r = video.create("test", mode="text2video", seconds=6, size="720P", dry_run=True, model="agnes-video-2.5-flash")
+    assert r["dry_run"]
+    assert r["request"]["model"] == "agnes-video-2.5-flash"
+    assert r["request"]["seconds"] == "6"
+    print("  PASS (dry-run)")
+
+    print("[video] testing legacy agnes-video-v2.0 backward compatibility...")
+    r = video.create("test", mode="text2video", num_frames=121, dry_run=True, model="agnes-video-v2.0")
+    assert r["dry_run"]
+    assert r["request"]["model"] == "agnes-video-v2.0"
+    print("  PASS (dry-run)")
 
     print("=== All smoke tests passed ===")
 
@@ -146,7 +159,7 @@ def main():
     global_args.add_argument("--verbose", action="store_true")
 
     # text
-    p_text = sub.add_parser("text", parents=[global_args], help="Generate text with agnes-2.0-flash")
+    p_text = sub.add_parser("text", parents=[global_args], help="Generate text with agnes-3.0-flash")
     p_text.add_argument("--prompt", help="Prompt (optional when --image-url is provided)")
     p_text.add_argument("--system")
     p_text.add_argument("--message", action="append")
@@ -158,31 +171,39 @@ def main():
     p_text.add_argument("--tools-json")
     p_text.add_argument("--tool-choice")
     p_text.add_argument("--json-output", action="store_true")
+    p_text.add_argument("--model", default="agnes-3.0-flash", help="Model name (default: agnes-3.0-flash)")
     p_text.set_defaults(func=cmd_text)
 
     # image
-    p_img = sub.add_parser("image", parents=[global_args], help="Generate images with agnes-image-2.1-flash")
+    p_img = sub.add_parser("image", parents=[global_args], help="Generate images with agnes-image-2.5-flash")
     p_img.add_argument("mode", choices=["text2img", "img2img", "compose"])
     p_img.add_argument("--prompt", required=True)
     p_img.add_argument("--image-url", action="append")
     p_img.add_argument("--size", default="1024x768")
     p_img.add_argument("--output-dir")
+    p_img.add_argument("--model", default="agnes-image-2.5-flash", help="Model name (default: agnes-image-2.5-flash)")
     p_img.set_defaults(func=cmd_image)
 
     # video
-    p_vid = sub.add_parser("video", parents=[global_args], help="Generate videos with agnes-video-v2.0")
-    p_vid.add_argument("mode", choices=["text2video", "img2video", "keyframes"])
+    p_vid = sub.add_parser("video", parents=[global_args], help="Generate videos with agnes-video-2.5-flash")
+    p_vid.add_argument("mode", choices=["text2video", "img2video", "keyframes", "reference"])
     p_vid.add_argument("--prompt", required=True)
     p_vid.add_argument("--image-url", action="append")
-    p_vid.add_argument("--width", type=int, default=1152)
-    p_vid.add_argument("--height", type=int, default=768)
-    p_vid.add_argument("--num-frames", type=int, default=121)
+    p_vid.add_argument("--audio-url", action="append")
+    p_vid.add_argument("--ref-video-url", action="append")
+    p_vid.add_argument("--model", default="agnes-video-2.5-flash", help="Model name (default: agnes-video-2.5-flash)")
+    p_vid.add_argument("--seconds", type=int, default=5, help="Duration in seconds (4-12, default: 5)")
+    p_vid.add_argument("--aspect-ratio", default="16:9", choices=["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"])
+    p_vid.add_argument("--size", default="720P", choices=["720P", "1080P", "1K", "2K", "480P"])
+    p_vid.add_argument("--width", type=int)
+    p_vid.add_argument("--height", type=int)
+    p_vid.add_argument("--num-frames", type=int)
     p_vid.add_argument("--frame-rate", type=int, default=24)
     p_vid.add_argument("--seed", type=int)
     p_vid.add_argument("--num-inference-steps", type=int)
     p_vid.add_argument("--negative-prompt")
     p_vid.add_argument("--no-poll", action="store_true")
-    p_vid.add_argument("--poll-interval", type=int, default=10)
+    p_vid.add_argument("--poll-interval", type=int, default=5)
     p_vid.add_argument("--timeout", type=int, default=900)
     p_vid.add_argument("--download", action="store_true")
     p_vid.add_argument("--output-dir")
@@ -191,7 +212,8 @@ def main():
     # video poll
     p_poll = sub.add_parser("poll", parents=[global_args], help="Poll video result by video_id")
     p_poll.add_argument("video_id")
-    p_poll.add_argument("--poll-interval", type=int, default=10)
+    p_poll.add_argument("--model", default="agnes-video-2.5-flash")
+    p_poll.add_argument("--poll-interval", type=int, default=5)
     p_poll.add_argument("--timeout", type=int, default=900)
     p_poll.add_argument("--download", action="store_true")
     p_poll.add_argument("--output-dir")
@@ -199,7 +221,7 @@ def main():
 
     # smoke-test
     p_test = sub.add_parser("smoke-test", parents=[global_args], help="Run end-to-end smoke tests (dry-run mode)")
-    p_test.add_argument("--video-case", choices=["text2video", "img2video", "keyframes"])
+    p_test.add_argument("--video-case", choices=["text2video", "img2video", "keyframes", "reference"])
     p_test.set_defaults(func=cmd_smoke_test)
 
     # setup

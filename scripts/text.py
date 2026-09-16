@@ -13,8 +13,9 @@ def _headers():
         "Content-Type": "application/json"
     }
 
-def chat(prompt, system=None, messages=None, stream=False, temperature=0.7, top_p=0.9, max_tokens=4096, tools_json=None, tool_choice=None, json_output=False, dry_run=False, api_base=None, image_b64s=None, timeout=120):
+def chat(prompt, system=None, messages=None, stream=False, temperature=0.7, top_p=0.9, max_tokens=4096, tools_json=None, tool_choice=None, json_output=False, dry_run=False, api_base=None, image_b64s=None, timeout=120, model=None):
     base = api_base or API_BASE
+    selected_model = model or "agnes-3.0-flash"
     msgs = []
     if system:
         msgs.append({"role": "system", "content": system})
@@ -32,7 +33,7 @@ def chat(prompt, system=None, messages=None, stream=False, temperature=0.7, top_
         msgs.append({"role": "user", "content": prompt})
 
     body = {
-        "model": "agnes-2.0-flash",
+        "model": selected_model,
         "messages": msgs,
         "temperature": temperature,
         "top_p": top_p,
@@ -110,7 +111,8 @@ if __name__ == "__main__":
     parser.add_argument("--tool-choice")
     parser.add_argument("--json-output", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--model", default="agnes-3.0-flash")
     args = parser.parse_args()
-    result = chat(args.prompt, args.system, args.message, args.stream, args.temperature, args.top_p, args.max_tokens, args.tools_json, args.tool_choice, args.json_output, args.dry_run)
+    result = chat(args.prompt, args.system, args.message, args.stream, args.temperature, args.top_p, args.max_tokens, args.tools_json, args.tool_choice, args.json_output, args.dry_run, model=args.model)
     if isinstance(result, dict):
         print(json.dumps(result, indent=2))

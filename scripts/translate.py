@@ -8,8 +8,8 @@ def _get_key():
 def needs_translation(text):
     return any(ord(c) > 127 for c in text)
 
-def translate(prompt, api_base=None):
-    """Translate non-English prompt to English using agnes-2.0-flash."""
+def translate(prompt, api_base=None, model="agnes-3.0-flash"):
+    """Translate non-English prompt to English using Agnes text model."""
     if not needs_translation(prompt):
         return prompt
     base = api_base or API_BASE
@@ -17,7 +17,7 @@ def translate(prompt, api_base=None):
     if not key:
         return prompt
     body = {
-        "model": "agnes-2.0-flash",
+        "model": model,
         "messages": [
             {"role": "system", "content": "Translate the following prompt to English. Preserve all visual details, style, lighting, composition, and quality terms. Return ONLY the translated text, no explanation."},
             {"role": "user", "content": prompt}
